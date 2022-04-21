@@ -5,8 +5,7 @@ using TMPro;
 
 public class CartItem : MonoBehaviour
 {
-    [SerializeField]
-    TextMeshProUGUI quantityText;
+    [SerializeField] TextMeshProUGUI quantityText;
 
     private int itemId = -1;
     private int quantity = 0;
