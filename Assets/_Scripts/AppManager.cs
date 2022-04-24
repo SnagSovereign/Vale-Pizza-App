@@ -29,7 +29,11 @@ public class AppManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI itemPriceText;
 
     private int currentScreenIndex = -1;
+    private int currentItemId = -1;
     private string myQuery;
+
+    // A list of arrays that contain the itemId & itemQuantity
+    public List<int[]> shoppingCart = new List<int[]>();
 
     // Use this for initialization
     private void Start()
@@ -40,7 +44,10 @@ public class AppManager : MonoBehaviour
         // Go to the sign in screen
         MenuGoTo(0);
 
-        itemNameText.text = "Pepperoni";
+        int itemId = 0;
+        int itemQuantity = 69;
+
+        shoppingCart.Add(new int[2] { itemId, itemQuantity });
 
         // string range = "Premium";
 
@@ -64,6 +71,28 @@ public class AppManager : MonoBehaviour
     {
 
     }
+
+    public void AddToCart()
+    {
+        // Loop through all of the existing cart items
+        foreach (int[] item in shoppingCart)
+        {
+            // If the item is already in the cart
+            if (item[0] == currentItemId)
+            {
+                // Increment the quantity by one
+                item[1]++;
+
+                // Exit this method
+                return;
+            }
+        }
+
+        // If the item is not already in the cart,
+        // then add it and give it a quantity of one
+        shoppingCart.Add(new int[2] { currentItemId, 1 });
+    }
+
 
     public void MenuGoTo(int screenIndex)
     {
@@ -111,7 +140,20 @@ public class AppManager : MonoBehaviour
 
     public void LoadItemScreen(int itemId)
     {
-        Debug.Log("Data loading...");
+        // Set the currentItemId to the item that was just clicked
+        currentItemId = itemId;
+
+        // Get the data and image
+
+        // Display the data and image
+    }
+
+    public void LoadShoppingCart()
+    {
+        foreach (int[] item in shoppingCart)
+        {
+            print("ID: " + item[0] + "   Quantity: " + item[1]);
+        }
     }
 
     public void HighlightNavButton(int buttonIndex)

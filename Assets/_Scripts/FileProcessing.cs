@@ -35,6 +35,9 @@ public class FileProcessing : MonoBehaviour
         string sql = "CREATE TABLE " + fileName +
             "( " + values[0] + " INTEGER PRIMARY KEY AUTOINCREMENT, ";
 
+        
+        
+
         //check which file I have then build the rest of the query
         if (fileName == "planets")
         {

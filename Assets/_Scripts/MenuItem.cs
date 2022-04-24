@@ -13,6 +13,22 @@ public class MenuItem : MonoBehaviour
     [SerializeField] TextMeshProUGUI itemPriceText;
     [SerializeField] TextMeshProUGUI itemEnergyText;
 
+    public void SetItemId(int id)
+    {
+        itemId = id;
+    }
+
+    public void FillDetails(string itemName, float itemPrice, int itemEnergy, string imageName)
+    {
+        itemNameText.text = itemName;
+        itemPriceText.text = itemPrice.ToString("C");
+        itemEnergyText.text = itemEnergy.ToString();
+
+        // Fetch the image
+
+        // Display the image
+    }
+
     public void MenuItemClicked()
     {
         // Switch to the item screen
@@ -21,5 +37,4 @@ public class MenuItem : MonoBehaviour
         // Load the correct data into the item screen
         AppManager.manager.LoadItemScreen(itemId);
     }
-
 }
