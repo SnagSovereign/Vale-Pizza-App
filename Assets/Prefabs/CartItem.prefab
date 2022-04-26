@@ -335,7 +335,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4fc8c00d8633ec4e8615bf6c9603a45, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  quantityText: {fileID: 114842432497502580}
+  itemNameText: {fileID: 114223268804754764}
+  itemPriceText: {fileID: 114026386128399468}
+  itemQuantityText: {fileID: 114842432497502580}
+  itemImage: {fileID: 114329230475097190}
 --- !u!114 &114101341131724142
 MonoBehaviour:
   m_ObjectHideFlags: 1

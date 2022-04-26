@@ -211,4 +211,9 @@ public class AppManager : MonoBehaviour
         // Run the query to fill the data reader
         DB.RunQuery(myQuery);
     }
+
+    void OnApplicationQuit()
+    {
+        DB.CloseDB();
+    }
 }
