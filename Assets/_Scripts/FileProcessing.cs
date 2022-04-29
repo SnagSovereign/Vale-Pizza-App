@@ -33,30 +33,14 @@ public class FileProcessing : MonoBehaviour
 
         //Setup the query
         string sql = "CREATE TABLE " + fileName +
-            "( " + values[0] + " INTEGER PRIMARY KEY AUTOINCREMENT, ";
+                     "( ID INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                     values[0] + " TEXT, " +
+                     values[1] + " TEXT, " +
+                     values[2] + " TEXT, " +
+                     values[3] + " INTEGER, " +
+                     values[4] + " REAL, " +
+                     values[5] + " TEXT);";
 
-        
-        
-
-        //check which file I have then build the rest of the query
-        if (fileName == "planets")
-        {
-            //append to the	query string
-            sql += values[1] + " TEXT, "
-                    + values[2] + " REAL, "
-                    + values[3] + " INTEGER, "
-                    + values[4] + " REAL, "
-                    + values[5] + " INTEGER, "
-                    + values[6] + " REAL, "
-                    + values[7] + " REAL);";
-        }
-        else //moon
-        {
-            //append to the	query string
-            sql += values[1] + " TEXT, "
-                + values[2] + " INTEGER, "
-                + values[3] + " REAL);";
-        }
         //run the query
         RunMyQuery(sql);
     }
@@ -82,12 +66,18 @@ public class FileProcessing : MonoBehaviour
     {
         int valueIndex = 0; //stores the index of the value
         int lastCommaIndex = 0; //will store the location of the start of the next substring
+        bool inQuote = false;
 
         //loop through the string looking for commas
         for (int i = 0; i < line.Length; i++)
         {
+            if(line[i] == '"')
+            {
+                inQuote = !inQuote;
+
+            }
             //when i find a comma use the position to 
-            if (line[i] == ',')
+            else if (line[i] == ',' && !inQuote)
             {
                 //break everything in front of it into a word using substring
                 //save it to the values array position
@@ -133,28 +123,10 @@ public class FileProcessing : MonoBehaviour
             values = BreakIntoValues(records[i]);
 
             // add the values to the table as a new record by setting up a new query			
-            string sql;
-            //check which file is being used
-            if (fileName.Contains("PLANET"))
-            {
-                sql = "INSERT INTO planets ( ID,Planet,Mass,Diameter,Gravity,MeanTemp,DayInHours,OrbitalPeriodDays) " +
-                     "VALUES( " + values[0] + ",'" + values[1] + "'," + values[2] + "," + values[3] + "," +
-                                values[4] + "," + values[5] + "," + values[6] + "," + values[7] + ");";
-            }
-            else //moons
-            {
-                //CHECK if the moon has a mass
-                if (values[3] == "") //no mass
-                {
-                    sql = "INSERT INTO moons (ID,Moon,HostPlanet) " +
-                                         "VALUES( " + values[0] + ",'" + values[1] + "'," + values[2] + ");";
-                }
-                else //mass recorded
-                {
-                    sql = "INSERT INTO moons (ID,Moon,HostPlanet,Mass) " +
-                     "VALUES( " + values[0] + ",'" + values[1] + "'," + values[2] + "," + values[3] + ");";
-                }
-            }
+            string sql = "INSERT INTO menu (Name,Range,Description,KJ,Price,Image) " +
+                         "VALUES('" + values[0] + "','" + values[1] + "','" + values[2] 
+                         + "'," + values[3] + "," + values[4] + ",'" + values[5] + "');";
+
             //run the query
             RunMyQuery(sql);
         }//end loop
