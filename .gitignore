@@ -62,4 +62,5 @@ crashlytics-build.properties
 UserSettings
 
 # Vale Pizza DB
-[Aa]ssets/StreamingAssets/ValePizza*
+[Aa]ssets/StreamingAssets/ValePizza.db
+[Aa]ssets/StreamingAssets/ValePizza.db.meta
