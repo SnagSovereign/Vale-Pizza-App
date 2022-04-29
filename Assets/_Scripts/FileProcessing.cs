@@ -71,10 +71,9 @@ public class FileProcessing : MonoBehaviour
         //loop through the string looking for commas
         for (int i = 0; i < line.Length; i++)
         {
-            if(line[i] == '"')
+            if (line[i] == '"')
             {
                 inQuote = !inQuote;
-
             }
             //when i find a comma use the position to 
             else if (line[i] == ',' && !inQuote)
@@ -124,7 +123,7 @@ public class FileProcessing : MonoBehaviour
 
             // add the values to the table as a new record by setting up a new query			
             string sql = "INSERT INTO menu (Name,Range,Description,KJ,Price,Image) " +
-                         "VALUES('" + values[0] + "','" + values[1] + "','" + values[2] 
+                         "VALUES('" + values[0] + "','" + values[1] + "','" + values[2]
                          + "'," + values[3] + "," + values[4] + ",'" + values[5] + "');";
 
             //run the query
@@ -186,5 +185,4 @@ public class FileProcessing : MonoBehaviour
         //Get the CSV File "Menu.csv"
         GetCSVFile("Menu.csv");
     }
-
 }

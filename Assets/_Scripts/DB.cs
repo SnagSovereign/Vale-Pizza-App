@@ -28,6 +28,9 @@ public static class DB
 
     public static void CloseDB()
     {
+        // exit this method if no connection exists
+        if (conn == null) return;
+
         //clean up (empty) the reader if it is open
         if (reader != null)
         {

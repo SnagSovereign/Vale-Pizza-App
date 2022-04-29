@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -64,7 +64,7 @@ public class AppManager : MonoBehaviour
 
     public void LoginButton()
     {
-
+        // Validate 
     }
 
     public void SignUpButton()
