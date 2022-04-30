@@ -255,7 +255,7 @@ public class AppManager : MonoBehaviour
     }
 
     // This method is called whenever there is a change in the search InputField
-    public void SearchInputUpdate()
+    public void SearchSubmit()
     {
         // Check if the inputfield contains characters
         if (searchInputField.text.Length > 0)

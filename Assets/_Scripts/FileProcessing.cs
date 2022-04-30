@@ -80,7 +80,8 @@ public class FileProcessing : MonoBehaviour
             {
                 //break everything in front of it into a word using substring
                 //save it to the values array position
-                values[valueIndex] = line.Substring(lastCommaIndex, (i - lastCommaIndex));
+                values[valueIndex] = line.Substring(lastCommaIndex, (i - lastCommaIndex))
+                                         .Replace('"'.ToString(), string.Empty);
                 //remember the position of the comma and set the start of the next string
                 lastCommaIndex = i + 1;
                 //increment value index
