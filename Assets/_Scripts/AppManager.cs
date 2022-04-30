@@ -108,6 +108,21 @@ public class AppManager : MonoBehaviour
                 break;
             }
         }
+
+        shoppingCartPriceText.text = CalculateTotal().ToString("C");
+    }
+
+    public void UpdateItemQuantity(int itemId, int newQuantity)
+    {
+        foreach (int[] item in shoppingCart)
+        {
+            if (item[0] == itemId)
+            {
+                item[1] = newQuantity;
+                shoppingCartPriceText.text = CalculateTotal().ToString("C");
+                break;
+            }
+        }
     }
 
 
@@ -281,6 +296,8 @@ public class AppManager : MonoBehaviour
 
             DB.CloseDB();
         }
+
+        shoppingCartPriceText.text = CalculateTotal().ToString("C");
     }
 
     public void HighlightNavButton(int buttonIndex)
@@ -298,7 +315,13 @@ public class AppManager : MonoBehaviour
     }
 
     // This method is called whenever there is a change in the search InputField
-    public void SearchSubmit()
+    public void OnSearchSubmit()
+    {
+        // Reload the menu screen
+        LoadMenuScreen();
+    }
+
+    public void OnSearchChange()
     {
         // Check if the inputfield contains characters
         if (searchInputField.text.Length > 0)
@@ -309,15 +332,35 @@ public class AppManager : MonoBehaviour
         {
             clearSearchButton.SetActive(false);
         }
-
-        // Reload the menu screen
-        LoadMenuScreen();
     }
 
     public void ClearSearch()
     {
         searchInputField.text = "";
         LoadMenuScreen();
+    }
+
+    private float CalculateTotal()
+    {
+        float total = 0.0f;
+
+        foreach (int[] item in shoppingCart)
+        {
+            // GET the price of the item
+            myQuery = "SELECT Price FROM menu WHERE ID = " + item[0] + ";";
+
+            RunMyQuery();
+
+            if (DB.reader.Read())
+            {
+                // Add the quantity * price of the item to the total
+                total += item[1] * DB.reader.GetFloat(0);
+            }
+
+            DB.CloseDB();
+        }
+
+        return total;
     }
 
     private void RunMyQuery()

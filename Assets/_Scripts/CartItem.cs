@@ -24,41 +24,17 @@ public class CartItem : MonoBehaviour
         return itemId;
     }
 
-    public void IncrementQuantity()
+    public void IncrementQuantity(int incrementAmount)
     {
-        itemQuantity++;
-        // TODO: update the shopping cart list in AppManager
-
-        UpdateShoppingCartList();
-
-        UpdateUI();
-    }
-
-    public void DecrementQuantity()
-    {
-        if (itemQuantity <= 1)
+        if (itemQuantity + incrementAmount <= 0)
         {
             DeleteCartItem();
             return;
         }
 
-        itemQuantity--;
-
-        UpdateShoppingCartList();
-
+        itemQuantity += incrementAmount;
+        AppManager.manager.UpdateItemQuantity(itemId, itemQuantity);
         UpdateUI();
-    }
-
-    private void UpdateShoppingCartList()
-    {
-        foreach (int[] item in AppManager.manager.shoppingCart)
-        {
-            if (item[0] == itemId)
-            {
-                item[1] = itemQuantity;
-                break;
-            }
-        }
     }
 
     public void DeleteCartItem()
