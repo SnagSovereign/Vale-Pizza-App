@@ -34,8 +34,6 @@ public class ImageProcessing : MonoBehaviour
 
     static public void FetchMyImage(RawImage imageHolder, string imageName)
     {
-        //include the file type for the image
-        image = imageName += ".png";
         //set up the path to the image
         //source = "http://eqsoc2184012/demer7/Pizza/Images/" + imageName;
         source = "https://ihelensvaleshs.com/digitalsolutions/Pizza/Images/" + imageName;
@@ -55,7 +53,10 @@ public class ImageProcessing : MonoBehaviour
         //temporarily stop the method from running (yield) until the www request finishes. 
         yield return www;
 
-        Debug.Log(www.error);
+        if (www.error != null)
+        {
+            Debug.Log(www.error);
+        }
 
         //check for things that can go wrong
         if (www != null && www.isDone && www.error == null)

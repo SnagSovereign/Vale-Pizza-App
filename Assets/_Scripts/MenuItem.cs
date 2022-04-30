@@ -22,11 +22,10 @@ public class MenuItem : MonoBehaviour
     {
         itemNameText.text = itemName;
         itemPriceText.text = itemPrice.ToString("C");
-        itemEnergyText.text = itemEnergy.ToString();
+        itemEnergyText.text = itemEnergy + " KJ";
 
         // Fetch the image
-
-        // Display the image
+        ImageProcessing.FetchMyImage(itemImage, imageName);
     }
 
     public void MenuItemClicked()

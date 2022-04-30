@@ -17,7 +17,7 @@ public class AppManager : MonoBehaviour
 
     [Header("UI Object References")]
     [SerializeField] GameObject[] screens;
-    [SerializeField] GameObject[] gridLayoutGroups;
+    [SerializeField] GameObject[] menuGridLayouts;
     [SerializeField] GameObject navbarCanvas;
     [SerializeField] TextMeshProUGUI[] navbarTexts;
     [SerializeField] RawImage[] navbarImages;
@@ -26,7 +26,13 @@ public class AppManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI shoppingCartPriceText;
     [SerializeField] TextMeshProUGUI itemNameText;
     [SerializeField] TextMeshProUGUI itemRangeText;
+    [SerializeField] TextMeshProUGUI itemDescriptionText;
     [SerializeField] TextMeshProUGUI itemPriceText;
+    [SerializeField] TextMeshProUGUI itemEnergyText;
+    [SerializeField] RawImage itemImage;
+
+    [Header("Textures")]
+    [SerializeField] Texture2D emptyTexture;
 
     private int currentScreenIndex = -1;
     private int currentItemId = -1;
@@ -44,10 +50,7 @@ public class AppManager : MonoBehaviour
         // Go to the sign in screen
         MenuGoTo(0);
 
-        int itemId = 0;
-        int itemQuantity = 69;
-
-        shoppingCart.Add(new int[2] { itemId, itemQuantity });
+        LoadMenuScreen();
 
         // string range = "Premium";
 
@@ -135,17 +138,98 @@ public class AppManager : MonoBehaviour
 
     public void LoadMenuScreen()
     {
-        Debug.Log("Menu screen refreshing...");
+        // Destroy all of the current menu items
+        foreach (GameObject gridLayout in menuGridLayouts)
+        {
+            foreach (Transform menuItem in gridLayout.transform)
+            {
+                if (menuItem.gameObject.GetComponent<MenuItem>())
+                {
+                    Destroy(menuItem.gameObject);
+                }
+            }
+
+            // Diable the grid layout group
+            gridLayout.SetActive(false);
+        }
+
+        // If the seach input field is empty
+        if (string.IsNullOrWhiteSpace(searchInputField.text))
+        {
+            // Select all of the rows in the menu table
+            myQuery = "SELECT * FROM menu";
+        }
+        // Otherwise if the search input field contains text
+        else
+        {
+            // Select rows in the menu table where the name or range are 
+            // LIKE the search term
+            myQuery = "SELECT * FROM menu WHERE Name LIKE '%" + searchInputField.text
+                    + "%' OR Range LIKE '%" + searchInputField.text + "%';";
+        }
+
+        RunMyQuery();
+
+        while (DB.reader.Read())
+        {
+            GameObject newItem = null;
+
+            // Loop through each of the menu grid layouts
+            foreach (GameObject gridLayout in menuGridLayouts)
+            {
+                // If the range of the layout matches the range of the pizza
+                if (gridLayout.tag == DB.reader.GetString(2))
+                {
+                    // enable the grid layout group
+                    gridLayout.SetActive(true);
+                    // Instantiate the menu item inside the grid layout
+                    newItem = Instantiate(menuItem, gridLayout.transform);
+                    break;
+                }
+            }
+
+            // Store reference to MenuItem component on object
+            MenuItem newMenuItem = newItem.GetComponent<MenuItem>();
+
+            // Set the ID on the menu item
+            newMenuItem.SetItemId(DB.reader.GetInt32(0));
+
+            // Fill in the text on the menu item
+            newMenuItem.FillDetails(DB.reader.GetString(1),
+                                    DB.reader.GetFloat(5),
+                                    DB.reader.GetInt32(4),
+                                    DB.reader.GetString(6));
+
+        }
+
+        DB.CloseDB();
     }
 
     public void LoadItemScreen(int itemId)
     {
+        // Set the image temporarily to be blank
+        itemImage.texture = emptyTexture;
+
         // Set the currentItemId to the item that was just clicked
         currentItemId = itemId;
 
-        // Get the data and image
+        // SELECT the item row in the menu table
+        myQuery = "SELECT * FROM menu WHERE ID = " + currentItemId + ";";
 
-        // Display the data and image
+        RunMyQuery();
+
+        if (DB.reader.Read())
+        {
+            itemNameText.text = DB.reader.GetString(1);
+            itemRangeText.text = DB.reader.GetString(2).ToUpper();
+            itemDescriptionText.text = DB.reader.GetString(3);
+            itemEnergyText.text = DB.reader.GetInt32(4) + " KJ";
+            itemPriceText.text = DB.reader.GetFloat(5).ToString("C");
+            ImageProcessing.FetchMyImage(itemImage, DB.reader.GetString(6));
+        }
+
+
+        DB.CloseDB();
     }
 
     public void LoadShoppingCart()
@@ -190,11 +274,12 @@ public class AppManager : MonoBehaviour
     public void ClearSearch()
     {
         searchInputField.text = "";
+        LoadMenuScreen();
     }
 
     private void RunMyQuery()
     {
-        // Close the DB is the reader is open
+        // Close the DB if the reader is open
         if (DB.reader != null)
         {
             DB.CloseDB();
