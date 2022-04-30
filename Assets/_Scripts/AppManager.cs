@@ -24,6 +24,7 @@ public class AppManager : MonoBehaviour
     [SerializeField] TMP_InputField searchInputField;
     [SerializeField] GameObject clearSearchButton;
     [SerializeField] TextMeshProUGUI shoppingCartPriceText;
+    [SerializeField] Transform shoppingCartContent;
     [SerializeField] TextMeshProUGUI itemNameText;
     [SerializeField] TextMeshProUGUI itemRangeText;
     [SerializeField] TextMeshProUGUI itemDescriptionText;
@@ -94,6 +95,19 @@ public class AppManager : MonoBehaviour
         // If the item is not already in the cart,
         // then add it and give it a quantity of one
         shoppingCart.Add(new int[2] { currentItemId, 1 });
+    }
+
+    public void RemoveFromCart(int itemId)
+    {
+        // Find the index of the item
+        foreach (int[] item in shoppingCart)
+        {
+            if (item[0] == itemId)
+            {
+                shoppingCart.Remove(item);
+                break;
+            }
+        }
     }
 
 
@@ -234,9 +248,38 @@ public class AppManager : MonoBehaviour
 
     public void LoadShoppingCart()
     {
+        // Destroy all of the cart item panels
+        foreach (Transform cartItem in shoppingCartContent)
+        {
+            Destroy(cartItem.gameObject);
+        }
+
         foreach (int[] item in shoppingCart)
         {
-            print("ID: " + item[0] + "   Quantity: " + item[1]);
+            // Instantiate a cart item panel
+            GameObject newItem = Instantiate(cartItem, shoppingCartContent);
+
+            // Store reference to CartItem Component
+            CartItem newCartItem = newItem.GetComponent<CartItem>();
+
+            // Set the ID on the cart item
+            newCartItem.SetItemId(item[0]);
+
+            // Get the details of the item
+            myQuery = "SELECT * FROM menu WHERE ID = " + item[0] + ";";
+
+            RunMyQuery();
+
+            if (DB.reader.Read())
+            {
+                // Fill in the details of the item
+                newCartItem.FillDetails(DB.reader.GetString(1),
+                                        DB.reader.GetFloat(5),
+                                        DB.reader.GetString(6),
+                                        item[1]);
+            }
+
+            DB.CloseDB();
         }
     }
 
