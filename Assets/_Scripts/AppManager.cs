@@ -34,6 +34,8 @@ public class AppManager : MonoBehaviour
     [SerializeField] TMP_InputField signUpConfirmPasswordField;
     [SerializeField] TMP_InputField searchInputField;
     [SerializeField] GameObject clearSearchButton;
+    [SerializeField] TMP_InputField checkoutAddressField;
+    [SerializeField] TMP_Dropdown checkoutPaymentDropdown;
     [SerializeField] TextMeshProUGUI shoppingCartTotalText;
     [SerializeField] Transform shoppingCartContent;
     [SerializeField] TextMeshProUGUI checkoutTotalText;
@@ -463,6 +465,29 @@ public class AppManager : MonoBehaviour
         }
 
         checkoutTotalText.text = CalculateTotal().ToString("C");
+
+        // SELECT the saved address and payment method
+        myQuery = "SELECT Address, PaymentMethod FROM user WHERE ID = " + currentUserId + ";";
+        RunMyQuery();
+        if (DB.reader.Read())
+        {
+            // Display the saved address
+            checkoutAddressField.text = DB.reader.GetString(0);
+
+            // Loop through all of the payment options
+            for (int i = 0; i < checkoutPaymentDropdown.options.Count; i++)
+            {
+                // If the text on the option matches the user's saved payment method
+                if (checkoutPaymentDropdown.options[i].text == DB.reader.GetString(1))
+                {
+                    // Set the value of the dropdown to match the saved payment method
+                    checkoutPaymentDropdown.value = i;
+                    DB.CloseDB();
+                    break;
+                }
+            }
+            DB.CloseDB();
+        }
 
         // Loop through every item in the shopping cart
         foreach (int[] item in shoppingCart)
