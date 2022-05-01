@@ -34,6 +34,6 @@ public class MenuItem : MonoBehaviour
         AppManager.manager.MenuGoTo(6);
 
         // Load the correct data into the item screen
-        AppManager.manager.LoadItemScreen(itemId);
+        AppManager.manager.LoadItem(itemId);
     }
 }

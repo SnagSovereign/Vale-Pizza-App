@@ -14,6 +14,9 @@ public class AppManager : MonoBehaviour
     [Header("Prefabs for instantiation")]
     [SerializeField] GameObject menuItem;
     [SerializeField] GameObject cartItem;
+    [SerializeField] GameObject order;
+    [SerializeField] GameObject orderRow;
+    [SerializeField] GameObject orderFooter;
 
     [Header("UI Object References")]
     [SerializeField] GameObject[] screens;
@@ -21,10 +24,20 @@ public class AppManager : MonoBehaviour
     [SerializeField] GameObject navbarCanvas;
     [SerializeField] TextMeshProUGUI[] navbarTexts;
     [SerializeField] RawImage[] navbarImages;
+    [SerializeField] TMP_InputField signInEmailField;
+    [SerializeField] TMP_InputField signInPasswordField;
+    [SerializeField] TMP_InputField signUpNameField;
+    [SerializeField] TMP_InputField signUpEmailField;
+    [SerializeField] TMP_InputField signUpAddressField;
+    [SerializeField] TMP_Dropdown signUpPaymentDropdown;
+    [SerializeField] TMP_InputField signUpPasswordField;
+    [SerializeField] TMP_InputField signUpConfirmPasswordField;
     [SerializeField] TMP_InputField searchInputField;
     [SerializeField] GameObject clearSearchButton;
-    [SerializeField] TextMeshProUGUI shoppingCartPriceText;
+    [SerializeField] TextMeshProUGUI shoppingCartTotalText;
     [SerializeField] Transform shoppingCartContent;
+    [SerializeField] TextMeshProUGUI checkoutTotalText;
+    [SerializeField] Transform checkoutContent;
     [SerializeField] TextMeshProUGUI itemNameText;
     [SerializeField] TextMeshProUGUI itemRangeText;
     [SerializeField] TextMeshProUGUI itemDescriptionText;
@@ -37,6 +50,7 @@ public class AppManager : MonoBehaviour
 
     private int currentScreenIndex = -1;
     private int currentItemId = -1;
+    private int currentUserId = -1;
     private string myQuery;
 
     // A list of arrays that contain the itemId & itemQuantity
@@ -50,8 +64,6 @@ public class AppManager : MonoBehaviour
 
         // Go to the sign in screen
         MenuGoTo(0);
-
-        LoadMenuScreen();
 
         // string range = "Premium";
 
@@ -68,12 +80,150 @@ public class AppManager : MonoBehaviour
 
     public void LoginButton()
     {
-        // Validate 
+        // Validate the user's input
+        if (string.IsNullOrWhiteSpace(signInEmailField.text))
+        {
+            Debug.LogWarning("Email is required");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(signInPasswordField.text))
+        {
+            Debug.LogWarning("Password is required");
+            return;
+        }
+
+        // Verify that the user's details are correct
+        myQuery = "SELECT * FROM user;";
+        RunMyQuery();
+        // Loop through all of the users in the DB
+        while (DB.reader.Read())
+        {
+            // If the email and password matches
+            if (DB.reader.GetString(3) == signInEmailField.text
+             && DB.reader.GetString(4) == signInPasswordField.text)
+            {
+                currentUserId = DB.reader.GetInt32(0);
+                Debug.Log("Welcome, " + DB.reader.GetString(1));
+                ClearSignInAndSignUp();
+                LoadMenu();
+                MenuGoTo(2);
+                HighlightNavButton(0);
+                DB.CloseDB();
+                return;
+            }
+        }
+        DB.CloseDB();
+        Debug.LogWarning("Email or Password is incorrect");
     }
 
     public void SignUpButton()
     {
+        // Validate the user's input
+        if (string.IsNullOrWhiteSpace(signUpNameField.text))
+        {
+            Debug.LogWarning("Name is a required field");
+            return;
+        }
 
+        if (string.IsNullOrWhiteSpace(signUpEmailField.text))
+        {
+            Debug.LogWarning("Email is a required field");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(signUpAddressField.text))
+        {
+            signUpAddressField.text = "";
+        }
+
+        if (string.IsNullOrWhiteSpace(signUpPasswordField.text))
+        {
+            Debug.LogWarning("Password is a required field");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(signUpConfirmPasswordField.text))
+        {
+            Debug.LogWarning("Password confirmation is required");
+            return;
+        }
+
+        // Ensure that another user with the same email does not already exist
+        myQuery = "SELECT Email FROM user;";
+        RunMyQuery();
+        // Loop through all of the users in the DB
+        while (DB.reader.Read())
+        {
+            if (DB.reader.GetString(0) == signUpEmailField.text)
+            {
+                Debug.LogWarning("Account already exists with " + signUpEmailField.text);
+                DB.CloseDB();
+                return;
+            }
+        }
+        DB.CloseDB();
+
+        // Check if the password is 8 characters
+        if (signUpPasswordField.text.Length < 8)
+        {
+            Debug.LogWarning("Password must be at least 8 characters");
+            return;
+        }
+
+        // Check if the password and confirmation match
+        if (signUpPasswordField.text != signUpConfirmPasswordField.text)
+        {
+            Debug.LogWarning("Password's do not match");
+            return;
+        }
+
+        // Insert a new user into the DB
+        myQuery = "INSERT INTO user (Name,Address,Email,Password,PaymentMethod) " +
+                  "VALUES('" + signUpNameField.text + "','" + signUpAddressField.text
+                  + "','" + signUpEmailField.text + "','" + signUpPasswordField.text
+                  + "','" + signUpPaymentDropdown.options[signUpPaymentDropdown.value].text
+                  + "');";
+
+        RunMyQuery();
+        DB.CloseDB();
+
+        // Get the ID of the new user
+        myQuery = "SELECT MAX(ID) FROM user;";
+        RunMyQuery();
+        if (DB.reader.Read())
+        {
+            currentUserId = DB.reader.GetInt32(0);
+        }
+        DB.CloseDB();
+
+        // Load the menu screen
+        LoadMenu();
+        MenuGoTo(2);
+        HighlightNavButton(0);
+        Debug.Log("Welcome, " + signUpNameField.text);
+        ClearSignInAndSignUp();
+    }
+
+    public void LogoutButton()
+    {
+        // Reset user ID back to default
+        currentUserId = -1;
+        // Go to the login screen
+        MenuGoTo(0);
+    }
+
+    public void ClearSignInAndSignUp()
+    {
+        searchInputField.text = "";
+        signInEmailField.text = "";
+        signInPasswordField.text = "";
+        signUpNameField.text = "";
+        signUpEmailField.text = "";
+        signUpAddressField.text = "";
+        signUpPaymentDropdown.value = 0;
+        signUpPasswordField.text = "";
+        signUpConfirmPasswordField.text = "";
     }
 
     public void AddToCart()
@@ -109,7 +259,7 @@ public class AppManager : MonoBehaviour
             }
         }
 
-        shoppingCartPriceText.text = CalculateTotal().ToString("C");
+        shoppingCartTotalText.text = CalculateTotal().ToString("C");
     }
 
     public void UpdateItemQuantity(int itemId, int newQuantity)
@@ -119,7 +269,7 @@ public class AppManager : MonoBehaviour
             if (item[0] == itemId)
             {
                 item[1] = newQuantity;
-                shoppingCartPriceText.text = CalculateTotal().ToString("C");
+                shoppingCartTotalText.text = CalculateTotal().ToString("C");
                 break;
             }
         }
@@ -165,7 +315,7 @@ public class AppManager : MonoBehaviour
         currentScreenIndex = screenIndex;
     }
 
-    public void LoadMenuScreen()
+    public void LoadMenu()
     {
         // Destroy all of the current menu items
         foreach (GameObject gridLayout in menuGridLayouts)
@@ -234,7 +384,7 @@ public class AppManager : MonoBehaviour
         DB.CloseDB();
     }
 
-    public void LoadItemScreen(int itemId)
+    public void LoadItem(int itemId)
     {
         // Set the image temporarily to be blank
         itemImage.texture = emptyTexture;
@@ -297,7 +447,41 @@ public class AppManager : MonoBehaviour
             DB.CloseDB();
         }
 
-        shoppingCartPriceText.text = CalculateTotal().ToString("C");
+        shoppingCartTotalText.text = CalculateTotal().ToString("C");
+    }
+
+    public void LoadCheckout()
+    {
+        // Remove all of the current rows in the checkout
+        foreach (Transform orderRow in checkoutContent)
+        {
+            Destroy(orderRow.gameObject);
+        }
+
+        checkoutTotalText.text = CalculateTotal().ToString("C");
+
+        // Loop through every item in the shopping cart
+        foreach (int[] item in shoppingCart)
+        {
+            // Instantiate a new row
+            GameObject newOrderRow = Instantiate(orderRow, checkoutContent);
+
+            // Get the name and price of the item
+            myQuery = "SELECT Name, Price FROM menu WHERE ID = " + item[0] + ";";
+
+            RunMyQuery();
+
+            if (DB.reader.Read())
+            {
+                // Display the quantity, name, and subtotal of the item
+                newOrderRow.GetComponent<OrderRow>().FillDetails
+                (
+                    item[1], DB.reader.GetString(0), DB.reader.GetFloat(1)
+                );
+            }
+
+            DB.CloseDB();
+        }
     }
 
     public void HighlightNavButton(int buttonIndex)
@@ -318,7 +502,7 @@ public class AppManager : MonoBehaviour
     public void OnSearchSubmit()
     {
         // Reload the menu screen
-        LoadMenuScreen();
+        LoadMenu();
     }
 
     public void OnSearchChange()
@@ -337,7 +521,7 @@ public class AppManager : MonoBehaviour
     public void ClearSearch()
     {
         searchInputField.text = "";
-        LoadMenuScreen();
+        LoadMenu();
     }
 
     private float CalculateTotal()

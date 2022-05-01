@@ -176,7 +176,7 @@ public class FileProcessing : MonoBehaviour
 
 
     // Use this for initialization
-    void Start()
+    void Awake()
     {
         //set the save location for data on the device
         //persitent path can only be set in Start / Awake methods
@@ -185,5 +185,13 @@ public class FileProcessing : MonoBehaviour
 
         //Get the CSV File "Menu.csv"
         GetCSVFile("Menu.csv");
+
+        // Create user, invoice, and invoiceitem tables if they don't already exist
+        string sql =
+        "CREATE TABLE IF NOT EXISTS user (ID INTEGER PRIMARY KEY AUTOINCREMENT, Name TEXT, Address TEXT, Email TEXT, Password TEXT, PaymentMethod TEXT); " +
+        "CREATE TABLE IF NOT EXISTS invoice (ID INTEGER PRIMARY KEY AUTOINCREMENT, UserID INTEGER, Date TEXT, Time TEXT); " +
+        "CREATE TABLE IF NOT EXISTS invoice_item (ID INTEGER PRIMARY KEY AUTOINCREMENT, ItemID INTEGER, InvoiceID INTEGER, Quantity INTEGER);";
+
+        RunMyQuery(sql);
     }
 }

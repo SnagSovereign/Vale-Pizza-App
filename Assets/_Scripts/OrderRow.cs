@@ -9,10 +9,10 @@ public class OrderRow : MonoBehaviour
     [SerializeField] TextMeshProUGUI itemNameText;
     [SerializeField] TextMeshProUGUI itemSubtotalText;
 
-    public void FillDetails(int quantity, string itemName, float itemSubtotal)
+    public void FillDetails(int quantity, string itemName, float itemPrice)
     {
         quantityText.text = quantity.ToString();
         itemNameText.text = itemName;
-        itemSubtotalText.text = itemSubtotal.ToString("C");
+        itemSubtotalText.text = (quantity * itemPrice).ToString("C");
     }
 }
