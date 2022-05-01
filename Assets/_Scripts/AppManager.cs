@@ -44,6 +44,10 @@ public class AppManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI itemPriceText;
     [SerializeField] TextMeshProUGUI itemEnergyText;
     [SerializeField] RawImage itemImage;
+    [SerializeField] TextMeshProUGUI accountNameText;
+    [SerializeField] TextMeshProUGUI accountEmailText;
+    [SerializeField] TextMeshProUGUI accountAddressText;
+    [SerializeField] TextMeshProUGUI accountPaymentText;
 
     [Header("Textures")]
     [SerializeField] Texture2D emptyTexture;
@@ -482,6 +486,21 @@ public class AppManager : MonoBehaviour
 
             DB.CloseDB();
         }
+    }
+
+    public void LoadAccount()
+    {
+        // SELECT all of the user's details
+        myQuery = "SELECT * FROM user WHERE ID = " + currentUserId + ";";
+        RunMyQuery();
+        if (DB.reader.Read())
+        {
+            accountNameText.text = DB.reader.GetString(1);
+            accountEmailText.text = DB.reader.GetString(3);
+            accountAddressText.text = DB.reader.GetString(2);
+            accountPaymentText.text = DB.reader.GetString(5);
+        }
+        DB.CloseDB();
     }
 
     public void HighlightNavButton(int buttonIndex)
