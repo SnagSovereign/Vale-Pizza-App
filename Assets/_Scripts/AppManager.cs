@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Data;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -38,6 +39,8 @@ public class AppManager : MonoBehaviour
     [SerializeField] TMP_Dropdown checkoutPaymentDropdown;
     [SerializeField] TextMeshProUGUI shoppingCartTotalText;
     [SerializeField] Transform shoppingCartContent;
+    [SerializeField] GameObject shoppingCartBottomPanel;
+    [SerializeField] GameObject emptyCartText;
     [SerializeField] TextMeshProUGUI checkoutTotalText;
     [SerializeField] Transform checkoutContent;
     [SerializeField] TextMeshProUGUI itemNameText;
@@ -50,6 +53,7 @@ public class AppManager : MonoBehaviour
     [SerializeField] TextMeshProUGUI accountEmailText;
     [SerializeField] TextMeshProUGUI accountAddressText;
     [SerializeField] TextMeshProUGUI accountPaymentText;
+    [SerializeField] Transform orderHistoryContent;
 
     [Header("Textures")]
     [SerializeField] Texture2D emptyTexture;
@@ -215,8 +219,57 @@ public class AppManager : MonoBehaviour
     {
         // Reset user ID back to default
         currentUserId = -1;
+        // Empty the shopping cart
+        shoppingCart = new List<int[]>();
         // Go to the login screen
         MenuGoTo(0);
+    }
+
+    public void OrderNowButton()
+    {
+        // Check the address field is not empty
+        if (string.IsNullOrWhiteSpace(checkoutAddressField.text))
+        {
+            Debug.LogWarning("Address is required");
+            return;
+        }
+
+        // INSERT a new invoice row into the DB
+        myQuery = "INSERT INTO invoice (UserID,Date,Time) " +
+                  "VALUES(" + currentUserId + ",'" + System.DateTime.Now.ToShortDateString()
+                  + "','" + System.DateTime.Now.ToShortTimeString() + "');";
+
+        RunMyQuery();
+        DB.CloseDB();
+
+        // Get the ID of the new invoice
+        myQuery = "SELECT MAX(ID) FROM invoice;";
+        RunMyQuery();
+        int invoiceId = -1;
+        if (DB.reader.Read())
+        {
+            invoiceId = DB.reader.GetInt32(0);
+        }
+        DB.CloseDB();
+
+        // Loop through every item in the shopping cart
+        foreach (int[] item in shoppingCart)
+        {
+            // INSERT a new invoice item into the DB
+            myQuery = "INSERT INTO invoice_item (ItemID,InvoiceID,Quantity) " +
+                      "VALUES(" + item[0] + "," + invoiceId + "," + item[1] + ");";
+            RunMyQuery();
+            DB.CloseDB();
+        }
+
+        // Reset the shopping cart
+        shoppingCart = new List<int[]>();
+
+        Debug.Log("Order placed successfully");
+
+        // Go back to the menu screen
+        MenuGoTo(2);
+        HighlightNavButton(0);
     }
 
     public void ClearSignInAndSignUp()
@@ -266,6 +319,8 @@ public class AppManager : MonoBehaviour
         }
 
         shoppingCartTotalText.text = CalculateTotal().ToString("C");
+
+        FormatCartScreen();
     }
 
     public void UpdateItemQuantity(int itemId, int newQuantity)
@@ -425,6 +480,8 @@ public class AppManager : MonoBehaviour
             Destroy(cartItem.gameObject);
         }
 
+        FormatCartScreen();
+
         foreach (int[] item in shoppingCart)
         {
             // Instantiate a cart item panel
@@ -486,8 +543,8 @@ public class AppManager : MonoBehaviour
                     break;
                 }
             }
-            DB.CloseDB();
         }
+        DB.CloseDB();
 
         // Loop through every item in the shopping cart
         foreach (int[] item in shoppingCart)
@@ -526,6 +583,114 @@ public class AppManager : MonoBehaviour
             accountPaymentText.text = DB.reader.GetString(5);
         }
         DB.CloseDB();
+    }
+
+    public void LoadOrderHistory()
+    {
+        // Destroy all of the orders currently listed
+        foreach (Transform order in orderHistoryContent)
+        {
+            Destroy(order.gameObject);
+        }
+
+        // SELECT all of the invoices for the user in descending order
+        myQuery = "SELECT * FROM invoice WHERE UserID = " + currentUserId +
+                  " ORDER BY ID DESC;";
+        RunMyQuery();
+
+        // List will store all of the invoices linked to current user
+        List<object[]> invoices = new List<object[]>();
+
+        // Loop through all of the rows in the reader
+        while (DB.reader.Read())
+        {
+            // Add the invoice to the list
+            invoices.Add(new object[3]
+            {
+                DB.reader.GetInt32(0),   // InvoiceID
+                DB.reader.GetString(2),  // Date
+                DB.reader.GetString(3)   // Time
+            });
+        }
+        DB.CloseDB();
+
+        // Loop through every invoice
+        foreach (object[] invoice in invoices)
+        {
+            // Instantiate a new order
+            GameObject newOrder = Instantiate(order, orderHistoryContent);
+            // SELECT all of the invoice items linked to the invoice
+            myQuery = "SELECT * FROM invoice_item WHERE InvoiceID = " + invoice[0] + ";";
+            RunMyQuery();
+            // List will store all of the invoice items for the current invoice
+            List<int[]> invoiceItems = new List<int[]>();
+            // Loop through all of the rows in the reader
+            while (DB.reader.Read())
+            {
+                // Add the item to the list
+                invoiceItems.Add(new int[2]
+                {
+                    DB.reader.GetInt32(1),  // ItemID
+                    DB.reader.GetInt32(3)   // Quantity
+                });
+            }
+            DB.CloseDB();
+
+            float totalPrice = 0f;
+
+            // Loop through every item in the invoice
+            foreach (int[] item in invoiceItems)
+            {
+                // Instantiate a new row
+                GameObject newRow = Instantiate(orderRow, newOrder.transform);
+                // SELECT the Name and Price of the item
+                myQuery = "SELECT Name, Price FROM menu WHERE ID = " + item[0] + ";";
+                RunMyQuery();
+                if (DB.reader.Read())
+                {
+                    // Display the details
+                    newRow.GetComponent<OrderRow>().FillDetails
+                    (
+                        item[1],                    // Quantity
+                        DB.reader.GetString(0),     // Item Name
+                        DB.reader.GetFloat(1)       // Price
+                    );
+
+                    // Add to the totalPrice (quantity of item * price)
+                    totalPrice += item[1] * DB.reader.GetFloat(1);
+                }
+                DB.CloseDB();
+            }
+
+            // Instantiate an order footer
+            GameObject newOrderFooter = Instantiate(orderFooter, newOrder.transform);
+            // Fill in the footer details
+            newOrderFooter.GetComponent<OrderFooter>().FillDetails
+            (
+                invoice[1].ToString(), // Date
+                invoice[2].ToString(), // Time
+                totalPrice             // Total price
+            );
+        }
+    }
+
+    // This method will check if the cart is empty
+    // and format the screen accordingly
+    private void FormatCartScreen()
+    {
+        // If the cart contains items
+        if (shoppingCart.Count > 0)
+        {
+            // Disable the text that says the cart is empty
+            emptyCartText.SetActive(false);
+            // Enable the bottom panel
+            shoppingCartBottomPanel.SetActive(true);
+        }
+        else
+        {
+            emptyCartText.SetActive(true);
+            shoppingCartBottomPanel.SetActive(false);
+        }
     }
 
     public void HighlightNavButton(int buttonIndex)
