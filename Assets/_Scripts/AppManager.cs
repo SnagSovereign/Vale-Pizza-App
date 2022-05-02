@@ -19,41 +19,65 @@ public class AppManager : MonoBehaviour
     [SerializeField] GameObject orderRow;
     [SerializeField] GameObject orderFooter;
 
-    [Header("UI Object References")]
+    [Header("Screens & Navabar")]
     [SerializeField] GameObject[] screens;
-    [SerializeField] GameObject[] menuGridLayouts;
     [SerializeField] GameObject navbarCanvas;
-    [SerializeField] TextMeshProUGUI[] navbarTexts;
     [SerializeField] RawImage[] navbarImages;
+    [SerializeField] TextMeshProUGUI[] navbarTexts;
+
+    [Header("Menu")]
+    [SerializeField] TMP_InputField searchInputField;
+    [SerializeField] GameObject clearSearchButton;
+    [SerializeField] GameObject[] menuGridLayouts;
+
+    [Header("Sign In")]
     [SerializeField] TMP_InputField signInEmailField;
     [SerializeField] TMP_InputField signInPasswordField;
+
+    [Header("Sign Up")]
     [SerializeField] TMP_InputField signUpNameField;
     [SerializeField] TMP_InputField signUpEmailField;
     [SerializeField] TMP_InputField signUpAddressField;
     [SerializeField] TMP_Dropdown signUpPaymentDropdown;
     [SerializeField] TMP_InputField signUpPasswordField;
     [SerializeField] TMP_InputField signUpConfirmPasswordField;
-    [SerializeField] TMP_InputField searchInputField;
-    [SerializeField] GameObject clearSearchButton;
+
+    [Header("Checkout")]
     [SerializeField] TMP_InputField checkoutAddressField;
     [SerializeField] TMP_Dropdown checkoutPaymentDropdown;
+    [SerializeField] TextMeshProUGUI checkoutTotalText;
+    [SerializeField] Transform checkoutContent;
+
+    [Header("Shoppping Cart")]
     [SerializeField] TextMeshProUGUI shoppingCartTotalText;
     [SerializeField] Transform shoppingCartContent;
     [SerializeField] GameObject shoppingCartBottomPanel;
     [SerializeField] GameObject emptyCartText;
-    [SerializeField] TextMeshProUGUI checkoutTotalText;
-    [SerializeField] Transform checkoutContent;
+
+    [Header("Item")]
     [SerializeField] TextMeshProUGUI itemNameText;
     [SerializeField] TextMeshProUGUI itemRangeText;
     [SerializeField] TextMeshProUGUI itemDescriptionText;
     [SerializeField] TextMeshProUGUI itemPriceText;
     [SerializeField] TextMeshProUGUI itemEnergyText;
     [SerializeField] RawImage itemImage;
+
+    [Header("Account")]
     [SerializeField] TextMeshProUGUI accountNameText;
     [SerializeField] TextMeshProUGUI accountEmailText;
     [SerializeField] TextMeshProUGUI accountAddressText;
     [SerializeField] TextMeshProUGUI accountPaymentText;
+
+    [Header("Order History")]
     [SerializeField] Transform orderHistoryContent;
+
+    [Header("Edit Account")]
+    [SerializeField] TMP_InputField editAccountNameField;
+    [SerializeField] TMP_InputField editAccountAddressField;
+    [SerializeField] TMP_Dropdown editAccountPaymentDropdown;
+    [SerializeField] TMP_InputField editAccountCurrentPasswordField;
+    [SerializeField] TMP_InputField editAccountNewPasswordField;
+    [SerializeField] TMP_InputField editAccountConfirmPasswordField;
 
     [Header("Textures")]
     [SerializeField] Texture2D emptyTexture;
@@ -270,6 +294,109 @@ public class AppManager : MonoBehaviour
         // Go back to the menu screen
         MenuGoTo(2);
         HighlightNavButton(0);
+    }
+
+    public void SaveAccountDetails()
+    {
+        bool currentPasswordEmpty = true;
+        bool newPasswordEmpty = true;
+        bool changePassword = false;
+        // Validate the user's input
+        if (string.IsNullOrWhiteSpace(editAccountNameField.text))
+        {
+            Debug.LogWarning("Name is a required field");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(editAccountAddressField.text))
+        {
+            editAccountAddressField.text = "";
+        }
+        // If the current password is not empty
+        if (!string.IsNullOrWhiteSpace(editAccountCurrentPasswordField.text))
+        {
+            currentPasswordEmpty = false;
+            // Verify that the user input the correct password
+            myQuery = "SELECT Password FROM user WHERE ID = " + currentUserId + ";";
+            RunMyQuery();
+            if (DB.reader.Read())
+            {
+                if (editAccountCurrentPasswordField.text != DB.reader.GetString(0))
+                {
+                    Debug.LogWarning("Current password is incorrect");
+                    DB.CloseDB();
+                    return;
+                }
+            }
+            DB.CloseDB();
+        }
+        // If the new password is not empty
+        if (!string.IsNullOrWhiteSpace(editAccountNewPasswordField.text))
+        {
+            newPasswordEmpty = false;
+            if (currentPasswordEmpty)
+            {
+                Debug.LogWarning("Current password is required to change your password");
+                return;
+            }
+            // Check that the new password is at least 8 characters
+            if (editAccountNewPasswordField.text.Length < 8)
+            {
+                Debug.LogWarning("Your new password must be at least 8 characters");
+                return;
+            }
+            // Check that the password confirmation matches
+            if (editAccountNewPasswordField.text != editAccountConfirmPasswordField.text)
+            {
+                Debug.LogWarning("Password confirmation does not match");
+                return;
+            }
+        }
+        // New password is empty
+        else
+        {
+            if (!currentPasswordEmpty)
+            {
+                Debug.LogWarning("New password is required to change your password");
+                return;
+            }
+        }
+        // If confirm password field is not empty
+        if (!string.IsNullOrWhiteSpace(editAccountConfirmPasswordField.text))
+        {
+            if (currentPasswordEmpty || newPasswordEmpty)
+            {
+                Debug.LogWarning("Both current and new passwords are required to change your password");
+                return;
+            }
+            changePassword = true;
+        }
+
+        // Setup the query
+        myQuery = "UPDATE user SET Name = '" + editAccountNameField.text
+                + "', Address = '" + editAccountAddressField.text
+                + "', PaymentMethod = '"
+                + editAccountPaymentDropdown.options[editAccountPaymentDropdown.value].text
+                + "'";
+
+        if (changePassword)
+        {
+            // update the password if that is the case
+            myQuery += ", Password = '" + editAccountNewPasswordField.text + "'";
+        }
+
+        // Finish the query
+        myQuery += " WHERE ID = " + currentUserId + ";";
+        RunMyQuery();
+        DB.CloseDB();
+        Debug.Log("Details successfully updated!");
+        ClearEditAccount();
+        LoadAccount();
+        MenuGoTo(4);
+    }
+
+    public void DeleteAccountButton()
+    {
+        ClearEditAccount();
     }
 
     public void ClearSignInAndSignUp()
@@ -651,9 +778,9 @@ public class AppManager : MonoBehaviour
                     // Display the details
                     newRow.GetComponent<OrderRow>().FillDetails
                     (
-                        item[1],                    // Quantity
-                        DB.reader.GetString(0),     // Item Name
-                        DB.reader.GetFloat(1)       // Price
+                        item[1],                   // Quantity
+                        DB.reader.GetString(0),    // Item Name
+                        DB.reader.GetFloat(1)      // Price
                     );
 
                     // Add to the totalPrice (quantity of item * price)
@@ -667,11 +794,37 @@ public class AppManager : MonoBehaviour
             // Fill in the footer details
             newOrderFooter.GetComponent<OrderFooter>().FillDetails
             (
-                invoice[1].ToString(), // Date
-                invoice[2].ToString(), // Time
-                totalPrice             // Total price
+                invoice[1].ToString(),    // Date
+                invoice[2].ToString(),    // Time
+                totalPrice                // Total price
             );
         }
+    }
+
+    public void LoadEditAccount()
+    {
+        // SELECT the current user's details
+        myQuery = "SELECT Name, Address, PaymentMethod FROM user WHERE ID = "
+                + currentUserId + ";";
+        RunMyQuery();
+        if (DB.reader.Read())
+        {
+            editAccountNameField.text = DB.reader.GetString(0);
+            editAccountAddressField.text = DB.reader.GetString(1);
+            // Loop through all of the payment options
+            for (int i = 0; i < editAccountPaymentDropdown.options.Count; i++)
+            {
+                // If the text on the option matches the user's saved payment method
+                if (editAccountPaymentDropdown.options[i].text == DB.reader.GetString(2))
+                {
+                    // Set the value of the dropdown to match the saved payment method
+                    editAccountPaymentDropdown.value = i;
+                    DB.CloseDB();
+                    break;
+                }
+            }
+        }
+        DB.CloseDB();
     }
 
     // This method will check if the cart is empty
@@ -691,6 +844,16 @@ public class AppManager : MonoBehaviour
             emptyCartText.SetActive(true);
             shoppingCartBottomPanel.SetActive(false);
         }
+    }
+
+    public void ClearEditAccount()
+    {
+        editAccountNameField.text = "";
+        editAccountAddressField.text = "";
+        editAccountPaymentDropdown.value = 0;
+        editAccountCurrentPasswordField.text = "";
+        editAccountNewPasswordField.text = "";
+        editAccountConfirmPasswordField.text = "";
     }
 
     public void HighlightNavButton(int buttonIndex)
