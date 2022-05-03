@@ -191,7 +191,7 @@ public class AppManager : MonoBehaviour
         {
             if (DB.reader.GetString(0) == signUpEmailField.text)
             {
-                Debug.LogWarning("Account already exists with " + signUpEmailField.text);
+                Debug.LogWarning("Account already exists with that email");
                 DB.CloseDB();
                 return;
             }
@@ -394,9 +394,37 @@ public class AppManager : MonoBehaviour
         MenuGoTo(4);
     }
 
-    public void DeleteAccountButton()
+    public void DeleteAccount()
     {
+        List<int> invoiceIds = new List<int>();
+        // SELECT all of the invoice IDs linked to the user
+        myQuery = "SELECT ID FROM invoice WHERE UserID = " + currentUserId + ";";
+        RunMyQuery();
+        // Loop through each ID in the invoice table linked to the user
+        while (DB.reader.Read())
+        {
+            invoiceIds.Add(DB.reader.GetInt32(0));
+        }
+        DB.CloseDB();
+
+        foreach (int invoiceId in invoiceIds)
+        {
+            // DELETE all of the invoice items linked to the user
+            myQuery = "DELETE FROM invoice_item WHERE invoiceID = " + invoiceId;
+            RunMyQuery();
+        }
+
+        // DELETE all of the invoices linked to the user
+        myQuery = "DELETE FROM invoice WHERE UserID = " + currentUserId + ";";
+        RunMyQuery();
+
+        // Delete the user
+        myQuery = "DELETE FROM user WHERE ID = " + currentUserId + ";";
+        RunMyQuery();
+
+        Debug.Log("Account deleted");
         ClearEditAccount();
+        LogoutButton();
     }
 
     public void ClearSignInAndSignUp()
@@ -888,6 +916,11 @@ public class AppManager : MonoBehaviour
         {
             clearSearchButton.SetActive(false);
         }
+    }
+
+    public void ToggleObject(GameObject obj)
+    {
+        obj.SetActive(!obj.activeSelf);
     }
 
     public void ClearSearch()
