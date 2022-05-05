@@ -98,18 +98,6 @@ public class AppManager : MonoBehaviour
 
         // Go to the sign in screen
         MenuGoTo(0);
-
-        // string range = "Premium";
-
-        // foreach (GameObject group in gridLayoutGroups)
-        // {
-        //     if (group.tag == range)
-        //     {
-        //         group.SetActive(true);
-        //         GameObject newMenuItem = Instantiate(menuItem, group.transform);
-        //         break;
-        //     }
-        // }
     }
 
     public void LoginButton()
