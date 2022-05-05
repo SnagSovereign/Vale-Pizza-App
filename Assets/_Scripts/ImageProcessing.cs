@@ -61,13 +61,6 @@ public class ImageProcessing : MonoBehaviour
         //check for things that can go wrong
         if (www != null && www.isDone && www.error == null)
         {
-            ////set the stream as a texture
-            //Texture2D imageTexture = new Texture2D(100, 100);
-            //imageTexture.LoadImage(www.bytes);
-            ////imageTexture.name = imageFile;
-            //imageHolder.texture = imageTexture;
-
-
             //start a file stream to pip the binary data into a file
             FileStream stream = new FileStream(destFile, FileMode.Create);
             //use the stream to write the data to the destination file
